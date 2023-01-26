@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import Head from 'next/head';
 import Image from 'next/image';
 import buildspaceLogo from '../assets/buildspace-logo.png';
@@ -9,6 +10,8 @@ const Home = () => {
   const [currentLine, setCurrentLine] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [playing, setIsPlaying] = useState(false);
+  const [audio, setAudio] = useState(null);
+  const [volume, setVolume] = useState(0.5);
 
   const callGenerateEndpoint = async () => {
     setIsGenerating(true);
@@ -44,13 +47,19 @@ const Home = () => {
     console.log('handleSpeak', text);
     let lines = text.split('\n');
     setIsPlaying(true)
+    audio.play();
 
     // Display each line as it's played
     lines.forEach((line) => {
       let msg = new SpeechSynthesisUtterance(line);
-      msg.rate = 1.6;
-      msg.pitch = 1.2;
-
+      msg.rate = 1.5;
+      msg.onstart = () => {
+        setCurrentLine(line);
+        if(index === 0){
+          audio.volume = 0.2;
+          audio.play();
+        }
+      };
       // Display current line
       msg.onstart = () => setCurrentLine(line);
 
@@ -60,6 +69,7 @@ const Home = () => {
           setLyrics(text);
           setIsPlaying(false)
           setCurrentLine('');
+          audio.pause();
         }
       }
 
@@ -70,7 +80,14 @@ const Home = () => {
   const stopPlaying = () =>{
     window.speechSynthesis.cancel();
     setIsPlaying(false)
+    audio.pause();
   }
+
+  useEffect(() => {
+    if (audio) {
+        audio.volume = volume;
+    }
+  }, [audio, volume]);
 
   const onUserChangedText = (event) => {
     setUserInput(event.target.value);
@@ -84,13 +101,18 @@ const Home = () => {
       <div className="container">
         <div className="header">
           <div className="header-title">
-            <h1>Eminem rap song generator</h1>
+            <h1>Eminem raps for you</h1>
           </div>
           <div className="header-subtitle">
             <h2>What do you want Eminem to rap about?</h2>
           </div>
         </div>
+        <audio
+          src={`/beat3.mp3`}
+          onCanPlay={(e) => e.target.volume = 0.2}
 
+          ref={(el) => { setAudio(el); }}
+        />
         <div className="prompt-container">
           <textarea
             placeholder="start typing here"
@@ -98,6 +120,14 @@ const Home = () => {
             value={userInput}
             onChange={onUserChangedText}
           />
+                  <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.01}
+            value={volume}
+            onChange={(e) => setVolume(e.target.value)}
+        />
 
           <div className="prompt-buttons">
             <a
@@ -110,7 +140,7 @@ const Home = () => {
                 {isGenerating ? (
                   <span className="loader"></span>
                 ) : (
-                  <p>Generate</p>
+                  <p>RAP</p>
                 )}
               </div>
             </a>
