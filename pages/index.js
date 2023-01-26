@@ -11,7 +11,7 @@ const Home = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [playing, setIsPlaying] = useState(false);
   const [audio, setAudio] = useState(null);
-  const [volume, setVolume] = useState(0.5);
+  const [volume, setVolume] = useState(0.3);
 
   const callGenerateEndpoint = async () => {
     setIsGenerating(true);
@@ -36,7 +36,7 @@ const Home = () => {
       .filter((line) => !line.includes('Chorus'))
       .filter((line) => !line.includes(':'))
       .filter((line) => line.split(' ').length > 2)
-      .slice(0, 8)
+      .slice(0, 12)
       .join('\n');
 
     setIsGenerating(false);
@@ -52,7 +52,7 @@ const Home = () => {
     // Display each line as it's played
     lines.forEach((line) => {
       let msg = new SpeechSynthesisUtterance(line);
-      msg.rate = 1.5;
+      msg.rate = 1.3;
       msg.onstart = () => {
         setCurrentLine(line);
         if(index === 0){
