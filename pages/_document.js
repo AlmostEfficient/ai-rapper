@@ -5,12 +5,12 @@ export default function Document() {
     <Html>
       <Head>
         <meta property="og:title" content="AI Eminem" key="title"/>
-        <meta property="og:description" content="build with buildspace" key="description"/>
-        <meta
+        <meta property="og:description" content="Man running behind AI voice get tired" key="description"/>
+        {/* <meta
           property="og:image"
           content="https://cdn.buildspace.so/images/vibes/daboiz.png"
-        />
-        <meta name="twitter:card" content="summary_large_image"></meta>
+        /> */}
+        {/* <meta name="twitter:card" content="summary_large_image"></meta> */}
       </Head>
       <body>
         <Main />

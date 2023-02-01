@@ -96,7 +96,7 @@ const Home = () => {
   return (
     <div className="root">
       <Head>
-        <title>GPT-Rapper | buildspace</title>
+        <title>GPT-Rapper</title>
       </Head>
       <div className="container">
         <div className="header">
@@ -169,7 +169,7 @@ const Home = () => {
           </div>
         </div>
       </div>
-      <div className="badge-container grow">
+      {/* <div className="badge-container grow">
         <a
           href="https://buildspace.so/builds/ai-writer"
           target="_blank"
@@ -180,7 +180,7 @@ const Home = () => {
             <p>build with buildspace</p>
           </div>
         </a>
-      </div>
+      </div> */}
     </div>
   );
 };
