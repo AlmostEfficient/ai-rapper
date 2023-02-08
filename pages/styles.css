@@ -6,6 +6,10 @@ body {
     font-family: 'Manrope', sans-serif;
 }
 
+.label{
+    color: white;
+}
+
 .root {
     display: flex;
     place-content: center flex-start;

@@ -17,82 +17,118 @@ const Home = () => {
     setIsGenerating(true);
 
     console.log('Calling OpenAI...');
-    const response = await fetch('/api/generate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ userInput }),
-    });
+    try {
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userInput }),
+      });
+      // If response was 200
+      if (response.status === 200) {
+        const data = await response.json();
+        const { output } = data;
+        console.log('OpenAI replied...', output.text);
+    
+        // If the line has less than two words, remove it:
+        const cleanLyrics = output.text
+          .split('\n')
+          .filter((line) => !line.includes('Verse'))
+          .filter((line) => !line.includes('Chorus'))
+          .filter((line) => !line.includes(':'))
+          .filter((line) => line.split(' ').length > 2)
+          .slice(0, 12)
+          .join('\n');
 
-    const data = await response.json();
-    const { output } = data;
-    console.log('OpenAI replied...', output.text);
-
-    // If the line has less than two words, remove it:
-    const finalOutput = output.text
-      .split('\n')
-      .filter((line) => !line.includes('Verse'))
-      .filter((line) => !line.includes('Chorus'))
-      .filter((line) => !line.includes(':'))
-      .filter((line) => line.split(' ').length > 2)
-      .slice(0, 12)
-      .join('\n');
-
-    setIsGenerating(false);
-    handleSpeak(finalOutput);
-    // requestSpeechFile(eminemToken, finalOutput);
+        console.log('Clean lyrics', cleanLyrics);
+        playTTS(cleanLyrics);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+    finally {
+      setIsGenerating(false);
+    }
   };
 
-  const playTTS = async (text) => {
+  const playTTS = async (lyrics) => {
     const response = await fetch(`/api/textToSpeech`, {
       method: 'post',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ text: lyrics }),
     });
+
     console.log("started streaming audio")
     const audioBlob = await response.blob();
     const audioUrl = URL.createObjectURL(audioBlob);
-    const audio = new Audio(audioUrl);
+    const tts = new Audio(audioUrl);
+    
     // Adjust playback speed
-    audio.playbackRate = 1.3;
+    tts.playbackRate = 1.2;
+    audio.volume = 0.2;
+
+    tts.play();
     audio.play();
+    
+    setLyrics(lyrics)
+    // displayLyrics(lyrics)
+    setIsPlaying(true)
+    
+    tts.onended = () => {
+      setIsPlaying(false)
+      audio.pause();
+    }
   };
 
-  const handleSpeak = (text) => {
-    console.log('handleSpeak', text);
-    let lines = text.split('\n');
-    setIsPlaying(true)
-    audio.play();
+  // const handleSpeak = (text) => {
+  //   console.log('handleSpeak', text);
+  //   let lines = text.split('\n');
+  //   setIsPlaying(true)
+  //   audio.play();
 
-    // Display each line as it's played
-    lines.forEach((line) => {
-      let msg = new SpeechSynthesisUtterance(line);
-      msg.rate = 1.3;
-      msg.onstart = () => {
-        setCurrentLine(line);
-        if(index === 0){
-          audio.volume = 0.2;
-          audio.play();
-        }
-      };
-      // Display current line
-      msg.onstart = () => setCurrentLine(line);
+  //   // Display each line as it's played
+  //   lines.forEach((line) => {
+  //     let msg = new SpeechSynthesisUtterance(line);
+  //     msg.rate = 1.3;
+  //     msg.onstart = () => {
+  //       setCurrentLine(line);
+  //       if(index === 0){
+  //         audio.volume = 0.2;
+  //         audio.play();
+  //       }
+  //     };
+  //     // Display current line
+  //     msg.onstart = () => setCurrentLine(line);
 
-      // When the last line is spoken, set the complete lyrics with line breaks
-      if (line === lines[lines.length - 1]) {
-        msg.onend = () => {
-          setLyrics(text);
-          setIsPlaying(false)
-          setCurrentLine('');
-          audio.pause();
-        }
+  //     // When the last line is spoken, set the complete lyrics with line breaks
+  //     if (line === lines[lines.length - 1]) {
+  //       msg.onend = () => {
+  //         setLyrics(text);
+  //         setIsPlaying(false)
+  //         setCurrentLine('');
+  //         audio.pause();
+  //       }
+  //     }
+
+  //     window.speechSynthesis.speak(msg);
+  //   });
+  // };
+
+  // Display each line of lyrics at a rate of 150 words per minute (2.5 seconds per line)
+  const displayLyrics = (lyrics) => {
+    // Add the lyrics one line at a time
+    let lines = lyrics.split('\n');
+    let index = 0;
+    let interval = setInterval(() => {
+      setCurrentLine(lines[index]);
+      index++;
+      if (index === lines.length) {
+        clearInterval(interval);
       }
-
-      window.speechSynthesis.speak(msg);
-    });
+    }, 2500);
   };
 
   const stopPlaying = () =>{
@@ -119,10 +155,10 @@ const Home = () => {
       <div className="container">
         <div className="header">
           <div className="header-title">
-            <h1>Eminem raps for you</h1>
+            <h1>AI Farhaj raps for you</h1>
           </div>
           <div className="header-subtitle">
-            <h2>What do you want Eminem to rap about?</h2>
+            <h2>What do you want Farhaj to rap about?</h2>
           </div>
         </div>
         <audio
@@ -138,7 +174,9 @@ const Home = () => {
             value={userInput}
             onChange={onUserChangedText}
           />
-                  <input
+          {/* volume label */}
+          <label className="label" htmlFor="volume">Volume</label>
+          <input
             type="range"
             min={0}
             max={1}
@@ -148,7 +186,8 @@ const Home = () => {
         />
           {/* Temporary button for calling requestSpeechFile to test */}
           {/* <button onClick={() => generateFakeYou(userInput)}>FakeYou</button> */}
-          <button onClick={() => playTTS(userInput)}>Test voice</button>
+          {/* <button onClick={() => playTTS(userInput)}>Test voice</button> */}
+          {/* <button onClick={() => displayLyrics(userInput)}>Display lyrics</button> */}
 
           <div className="prompt-buttons">
             <a
