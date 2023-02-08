@@ -41,6 +41,24 @@ const Home = () => {
 
     setIsGenerating(false);
     handleSpeak(finalOutput);
+    // requestSpeechFile(eminemToken, finalOutput);
+  };
+
+  const playTTS = async (text) => {
+    const response = await fetch(`/api/textToSpeech`, {
+      method: 'post',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text }),
+    });
+    console.log("started streaming audio")
+    const audioBlob = await response.blob();
+    const audioUrl = URL.createObjectURL(audioBlob);
+    const audio = new Audio(audioUrl);
+    // Adjust playback speed
+    audio.playbackRate = 1.3;
+    audio.play();
   };
 
   const handleSpeak = (text) => {
@@ -96,7 +114,7 @@ const Home = () => {
   return (
     <div className="root">
       <Head>
-        <title>GPT-Rapper</title>
+        <title>GPT-Rapper | buildspace </title>
       </Head>
       <div className="container">
         <div className="header">
@@ -128,6 +146,9 @@ const Home = () => {
             value={volume}
             onChange={(e) => setVolume(e.target.value)}
         />
+          {/* Temporary button for calling requestSpeechFile to test */}
+          {/* <button onClick={() => generateFakeYou(userInput)}>FakeYou</button> */}
+          <button onClick={() => playTTS(userInput)}>Test voice</button>
 
           <div className="prompt-buttons">
             <a
@@ -169,7 +190,7 @@ const Home = () => {
           </div>
         </div>
       </div>
-      {/* <div className="badge-container grow">
+      <div className="badge-container grow">
         <a
           href="https://buildspace.so/builds/ai-writer"
           target="_blank"
@@ -180,7 +201,7 @@ const Home = () => {
             <p>build with buildspace</p>
           </div>
         </a>
-      </div> */}
+      </div>
     </div>
   );
 };
