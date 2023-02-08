@@ -41,7 +41,6 @@ const Home = () => {
 
     setIsGenerating(false);
     handleSpeak(finalOutput);
-    // requestSpeechFile(eminemToken, finalOutput);
   };
 
   const playTTS = async (text) => {
@@ -94,7 +93,7 @@ const Home = () => {
       window.speechSynthesis.speak(msg);
     });
   };
-
+    
   const stopPlaying = () =>{
     window.speechSynthesis.cancel();
     setIsPlaying(false)
@@ -119,10 +118,10 @@ const Home = () => {
       <div className="container">
         <div className="header">
           <div className="header-title">
-            <h1>Eminem raps for you</h1>
+            <h1>AI Raza raps</h1>
           </div>
           <div className="header-subtitle">
-            <h2>What do you want Eminem to rap about?</h2>
+            <h2>What do you want Raza to rap about?</h2>
           </div>
         </div>
         <audio
@@ -147,8 +146,7 @@ const Home = () => {
             onChange={(e) => setVolume(e.target.value)}
         />
           {/* Temporary button for calling requestSpeechFile to test */}
-          {/* <button onClick={() => generateFakeYou(userInput)}>FakeYou</button> */}
-          <button onClick={() => playTTS(userInput)}>Test voice</button>
+          {/* <button onClick={() => playTTS(userInput)}>Test voice</button> */}
 
           <div className="prompt-buttons">
             <a
