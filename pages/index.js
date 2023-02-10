@@ -11,7 +11,6 @@ const Home = () => {
   // Status of the generation process
   // 0 = not started, 1 = generating lyrics, 2 = generating audio, 3 = playing audio, 4 = finished
   const [status, setStatus] = useState(0);
-  const [audioURL, setAudioURL] = useState(null);
   const [music, setMusic] = useState(null);
   const [volume, setVolume] = useState(0.3);
 
@@ -41,7 +40,8 @@ const Home = () => {
           .filter((line) => line.split(' ').length > 2)
           // Add a . at the end of each line if it doesn't have one and add an exclamation mark at every 4th line
           .map((line, index) => {
-            if (index % 4 === 0) {
+            // If 4th line and doesn't end with a ., add a !
+            if (index % 4 === 0 && line[line.length - 1] !== '.') {
               return line + '!';
             } else if (line[line.length - 1] !== '.') {
               return line + '.';
@@ -54,7 +54,7 @@ const Home = () => {
           .join('\n');
 
         console.log('Clean lyrics', cleanLyrics);
-        handleTTS(cleanLyrics);
+        generateAndPlayTTS(cleanLyrics);
       }
     } catch (error) {
       console.log(error);
@@ -81,7 +81,7 @@ const Home = () => {
     }, 3000);
   };
 
-  const generateTTS = async (lyrics) => {
+  const generateAndPlayTTS  = async (lyrics) => {
     const response = await fetch(`/api/textToSpeech`, {
       method: 'post',
       headers: {
@@ -89,43 +89,30 @@ const Home = () => {
       },
       body: JSON.stringify({ text: lyrics }),
     });
+  
+    console.log('Started streaming audio');
     const audioBlob = await response.blob();
     const audioUrl = URL.createObjectURL(audioBlob);
-    console.log("Audio URL", audioUrl)
-    setAudioURL(audioUrl);
-    return audioUrl;
-  };
-  
-  const playTTS = (audioUrl, lyrics) => {
-    console.log('Started streaming audio');
     const tts = new Audio(audioUrl);
+  
+    // Adjust playback speed
     tts.playbackRate = 1.2;
-
-    setStatus(3);
+    music.volume = 0.3;
+  
     music.play();
-    displayLyrics(lyrics)
-    
-    // Wait a second so the music amps up
+    setStatus(3);
+  
+    // Wait 1s so the music ramps up before the lyrics start
     setTimeout(() => {
       tts.play();
-      setLyrics(lyrics);
     }, 1000);
-
+  
+    displayLyrics(lyrics)
+  
     tts.onended = () => {
       setStatus(4);
       music.pause();
     };
-  };
-
-  const handleTTS = async (lyrics, replay = false) => {
-    // If this is a replay of the same lyrics, we don't need to generate the audio again
-    if (replay && audioURL) {
-      playTTS(audioURL, lyrics);
-    }
-    else {
-      const audioUrl = await generateTTS(lyrics);
-      playTTS(audioUrl, lyrics);
-    }
   };
 
   const stopPlaying = () => {
@@ -231,7 +218,6 @@ const Home = () => {
                 </div>
               </a>
             )}
-
 
           </div>
         </div>
