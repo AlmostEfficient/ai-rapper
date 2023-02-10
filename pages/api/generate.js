@@ -5,7 +5,7 @@ const configuration = new Configuration({
 });
 
 const openai = new OpenAIApi(configuration);
-const basePromptPrefix =
+const basePrompt =
 `
 Give me lyrics for a rap song in the style of Eminem on the following topic.
 Respond with only the lyrics and nothing else. Do not include "Verse" or "Chorus" labels in your response.
@@ -14,12 +14,12 @@ Topic:
 `
 
 const generateAction = async (req, res) => {
-  console.log(`API: ${basePromptPrefix}${req.body.userInput}`)
+  console.log(`API: ${basePrompt}${req.body.userInput}`)
 
 
   const baseCompletion = await openai.createCompletion({
     model: 'text-davinci-003',
-    prompt: `${basePromptPrefix}${req.body.userInput}`,
+    prompt: `${basePrompt}${req.body.userInput}`,
     temperature: 0.8,
     max_tokens: 250,
   });

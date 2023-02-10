@@ -8,13 +8,15 @@ const Home = () => {
   const [userInput, setUserInput] = useState('');
   const [lyrics, setLyrics] = useState([]);
   const [currentLine, setCurrentLine] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [playing, setIsPlaying] = useState(false);
-  const [audio, setAudio] = useState(null);
+  // Status of the generation process
+  // 0 = not started, 1 = generating lyrics, 2 = generating audio, 3 = playing audio, 4 = finished
+  const [status, setStatus] = useState(0);
+  const [audioURL, setAudioURL] = useState(null);
+  const [music, setMusic] = useState(null);
   const [volume, setVolume] = useState(0.3);
 
-  const callGenerateEndpoint = async () => {
-    setIsGenerating(true);
+  const generateLyrics = async () => {
+    setStatus(1);
 
     console.log('Calling OpenAI...');
     try {
@@ -25,34 +27,61 @@ const Home = () => {
         },
         body: JSON.stringify({ userInput }),
       });
-      // If response was 200
       if (response.status === 200) {
         const data = await response.json();
         const { output } = data;
         console.log('OpenAI replied...', output.text);
-    
-        // If the line has less than two words, remove it:
+
+        // Clean up the lyrics output by OpenAI
         const cleanLyrics = output.text
           .split('\n')
           .filter((line) => !line.includes('Verse'))
           .filter((line) => !line.includes('Chorus'))
           .filter((line) => !line.includes(':'))
           .filter((line) => line.split(' ').length > 2)
+          // Add a . at the end of each line if it doesn't have one and add an exclamation mark at every 4th line
+          .map((line, index) => {
+            if (index % 4 === 0) {
+              return line + '!';
+            } else if (line[line.length - 1] !== '.') {
+              return line + '.';
+            } else {
+              return line;
+            }
+          })
+          // Only take the first 12 lines (this saves on word count for the TTS API)
           .slice(0, 12)
           .join('\n');
 
         console.log('Clean lyrics', cleanLyrics);
-        playTTS(cleanLyrics);
+        handleTTS(cleanLyrics);
       }
     } catch (error) {
       console.log(error);
-    }
-    finally {
-      setIsGenerating(false);
+    } finally {
+      setStatus(2);
     }
   };
 
-  const playTTS = async (lyrics) => {
+  const displayLyrics = (lyrics) => {
+    let lines = lyrics.split('\n');
+    let index = 0;
+    
+    setCurrentLine(lines[index]);
+    index++;
+
+    let interval = setInterval(() => {
+      setCurrentLine(lines[index]);
+      index++;
+      if (index === lines.length) {
+        clearInterval(interval);
+        setLyrics(lyrics);
+        setCurrentLine('');
+      }
+    }, 3000);
+  };
+
+  const generateTTS = async (lyrics) => {
     const response = await fetch(`/api/textToSpeech`, {
       method: 'post',
       headers: {
@@ -60,88 +89,56 @@ const Home = () => {
       },
       body: JSON.stringify({ text: lyrics }),
     });
-
-    console.log("started streaming audio")
     const audioBlob = await response.blob();
     const audioUrl = URL.createObjectURL(audioBlob);
+    console.log("Audio URL", audioUrl)
+    setAudioURL(audioUrl);
+    return audioUrl;
+  };
+  
+  const playTTS = (audioUrl, lyrics) => {
+    console.log('Started streaming audio');
     const tts = new Audio(audioUrl);
-    
-    // Adjust playback speed
     tts.playbackRate = 1.2;
-    audio.volume = 0.2;
 
-    tts.play();
-    audio.play();
+    setStatus(3);
+    music.play();
+    displayLyrics(lyrics)
     
-    setLyrics(lyrics)
-    // displayLyrics(lyrics)
-    setIsPlaying(true)
-    
+    // Wait a second so the music amps up
+    setTimeout(() => {
+      tts.play();
+      setLyrics(lyrics);
+    }, 1000);
+
     tts.onended = () => {
-      setIsPlaying(false)
-      audio.pause();
+      setStatus(4);
+      music.pause();
+    };
+  };
+
+  const handleTTS = async (lyrics, replay = false) => {
+    // If this is a replay of the same lyrics, we don't need to generate the audio again
+    if (replay && audioURL) {
+      playTTS(audioURL, lyrics);
+    }
+    else {
+      const audioUrl = await generateTTS(lyrics);
+      playTTS(audioUrl, lyrics);
     }
   };
 
-  // const handleSpeak = (text) => {
-  //   console.log('handleSpeak', text);
-  //   let lines = text.split('\n');
-  //   setIsPlaying(true)
-  //   audio.play();
-
-  //   // Display each line as it's played
-  //   lines.forEach((line) => {
-  //     let msg = new SpeechSynthesisUtterance(line);
-  //     msg.rate = 1.3;
-  //     msg.onstart = () => {
-  //       setCurrentLine(line);
-  //       if(index === 0){
-  //         audio.volume = 0.2;
-  //         audio.play();
-  //       }
-  //     };
-  //     // Display current line
-  //     msg.onstart = () => setCurrentLine(line);
-
-  //     // When the last line is spoken, set the complete lyrics with line breaks
-  //     if (line === lines[lines.length - 1]) {
-  //       msg.onend = () => {
-  //         setLyrics(text);
-  //         setIsPlaying(false)
-  //         setCurrentLine('');
-  //         audio.pause();
-  //       }
-  //     }
-
-  //     window.speechSynthesis.speak(msg);
-  //   });
-  // };
-
-  // Display each line of lyrics at a rate of 150 words per minute (2.5 seconds per line)
-  const displayLyrics = (lyrics) => {
-    // Add the lyrics one line at a time
-    let lines = lyrics.split('\n');
-    let index = 0;
-    let interval = setInterval(() => {
-      setCurrentLine(lines[index]);
-      index++;
-      if (index === lines.length) {
-        clearInterval(interval);
-      }
-    }, 2500);
-  };
-
-  const stopPlaying = () =>{
+  const stopPlaying = () => {
     window.speechSynthesis.cancel();
-    setIsPlaying(false)
-    audio.pause();
-  }
+    music.pause();
+    setStatus(4);
+  };
 
   useEffect(() => {
-    if (audio) {
-        audio.volume = volume;
+    if (music) {
+      music.volume = volume;
     }
-  }, [audio, volume]);
+  }, [music, volume]);
 
   const onUserChangedText = (event) => {
     setUserInput(event.target.value);
@@ -155,18 +152,21 @@ const Home = () => {
       <div className="container">
         <div className="header">
           <div className="header-title">
-            <h1>AI Farhaj raps for you</h1>
+            <h1>AI Raza raps for you</h1>
           </div>
           <div className="header-subtitle">
-            <h2>What do you want Farhaj to rap about?</h2>
+            <h2>What do you want Raza to rap about?</h2>
           </div>
         </div>
-        <audio
-          src={`/beat3.mp3`}
-          onCanPlay={(e) => e.target.volume = 0.2}
 
-          ref={(el) => { setAudio(el); }}
+        <audio
+          src={`/Lose_Yourself.mp3`}
+          onCanPlay={(e) => (e.target.volume = 0.2)}
+          ref={(el) => {
+            setMusic(el);
+          }}
         />
+
         <div className="prompt-container">
           <textarea
             placeholder="start typing here"
@@ -174,61 +174,80 @@ const Home = () => {
             value={userInput}
             onChange={onUserChangedText}
           />
-          {/* volume label */}
-          <label className="label" htmlFor="volume">Volume</label>
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.01}
-            value={volume}
-            onChange={(e) => setVolume(e.target.value)}
-        />
-          {/* Temporary button for calling requestSpeechFile to test */}
-          {/* <button onClick={() => generateFakeYou(userInput)}>FakeYou</button> */}
-          {/* <button onClick={() => playTTS(userInput)}>Test voice</button> */}
-          {/* <button onClick={() => displayLyrics(userInput)}>Display lyrics</button> */}
+
+          {status == 0 ? (
+            ''
+          ) : status == 1 ? (
+            <h3 className="status">Generating lyrics using GPT3...</h3>
+          ) : status == 2 ? (
+            <h3 className="status">Generating audio using ElevenLabs...</h3>
+          ) : status == 3 ? (
+            ''
+          ) : (
+            <h3 className="status">Thank you for listening!</h3>
+          )}
+
+          <div className="volume-container">
+            <div className="volume-icon">
+              {/* Generate image component with link to image of speaker icon in white stroke from icon website*/}
+              <img
+                src="https://img.icons8.com/ios/50/ffffff/speaker.png"
+                alt="speaker"
+              />
+            </div>
+
+            <input
+              className="volume-slider"
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={volume}
+              onChange={(e) => setVolume(e.target.value)}
+            />
+          </div>
 
           <div className="prompt-buttons">
             <a
               className={
-                isGenerating ? 'generate-button loading' : 'generate-button'
+                status == 1 ? 'generate-button loading' : 'generate-button'
               }
-              onClick={callGenerateEndpoint}
+              onClick={generateLyrics}
             >
               <div className="generate">
-                {isGenerating ? (
+                {status == 1 ? (
                   <span className="loader"></span>
                 ) : (
-                  <p>RAP</p>
+                  <p>Generate</p>
                 )}
               </div>
             </a>
-          </div>
 
-          {/* Button that is visible if text-to-speech is playing that calls stop function */}  
-          {playing && (
-            <div className="prompt-buttons">
+            {/* Button that is visible if text-to-speech is playing that calls stop function */}
+            {status == 3 && (
               <a className="generate-button" onClick={stopPlaying}>
                 <div className="generate">
                   <p>Stop</p>
                 </div>
               </a>
-            </div>
-          )}
+            )}
 
-          <div className="output">
-            <div className="output-header-container">
-              <div className="output-header">
-                <h3>{currentLine}</h3>
-              </div>
-              <div className="output-content">
-                <p> {lyrics} </p>
-              </div>
+
+          </div>
+        </div>
+
+        <div className="output">
+          <div className="output-header-container">
+            <div className="output-header">
+              <h3>{currentLine}</h3>
+            </div>
+            <div className="output-content">
+              <p> {lyrics} </p>
             </div>
           </div>
         </div>
       </div>
+
       <div className="badge-container grow">
         <a
           href="https://buildspace.so/builds/ai-writer"

@@ -7,6 +7,17 @@ const textToSpeech = async (req, res) => {
   const { text } = req.body;
   console.log("Received request to generate audio for", text)
 
+  if (!text) {
+    res.status(400).json({ error: "No text provided" });
+    return;
+  }
+
+  if (text.length < 10) {
+    res.status(400).json({ error: "Text is too short" });
+    console.log("Text is too short", text)
+    return;
+  }
+
   try{
     const { data } = await axios({
       method: 'post',

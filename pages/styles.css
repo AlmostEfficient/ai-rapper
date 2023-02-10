@@ -4,6 +4,7 @@ body {
     margin: 0;
     padding: 0;
     font-family: 'Manrope', sans-serif;
+    color: #fff;
 }
 
 .label{
@@ -29,14 +30,13 @@ body {
     align-items: center;
     flex: 0 0 auto;
     flex-flow: column nowrap;
-    gap: 10px;
+    gap: 32px;
     height: fit-content;
     max-width: 975px;
     overflow: auto;
     padding: 50px;
     position: relative;
     width: auto;
-    gap: 64px;
 }
 
 .header {    
@@ -121,6 +121,13 @@ textarea {
     font-family: 'Manrope', sans-serif;
 }
 
+.status {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    align-items: center;
+    color: #FFF
+}
 
 .prompt-box:focus {
     border-color:rgba(255, 255, 255, 0.75)
@@ -171,6 +178,52 @@ textarea {
 
 .or p {
     color: rgba(255, 255, 255, 0.25)
+}
+
+.volume-container{
+    display: flex;
+    place-content: center;
+    align-items: center;
+    flex: 0 0 auto;
+    flex-flow: row nowrap;
+    gap: 12px;
+    height: min-content;
+    overflow: hidden;
+    padding: 0px;
+    position: relative;
+    width: 100%;
+}
+
+.volume-icon {
+    outline: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    flex-shrink: 0;
+    transform: none;
+    width: 1.4em;
+}
+
+.volume-sider {
+    accent-color: rgb(7, 255, 106);
+}
+
+/* Input range with gray bg and black thumb */
+.volume-slider{
+    -webkit-appearance: none;
+    height: 6px;
+    border-radius: 5px;
+    background: #fff;
+    outline: none;
+    cursor: pointer;
+}
+
+.volume-slider::-webkit-slider-thumb {
+    height: 12px;
+    width: 20px;
+    border-radius: 7px;
+    background: rgb(255, 79, 18);;
+    -webkit-appearance: none;
 }
 
 .generate-button {
@@ -327,7 +380,7 @@ textarea {
 .output-content p {
     text-align: center;
     white-space: pre-line;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.76);
 }
 
 @media (min-width: 810px) and (max-width: 1199px) {
