@@ -97,8 +97,8 @@ const Home = () => {
     setTTS(tts);
 
     // Adjust playback speed
-    tts.playbackRate = 1.2;
-    tts.volume = 0.5;
+    tts.playbackRate = 1.1;
+    tts.volume = 0.6;
     music.volume = 0.3;
     
     music.play();
@@ -126,10 +126,10 @@ const Home = () => {
   useEffect(() => {
     if (music && tts) {
       tts.volume = volume;
-      // music volume should be 0.2 less than the tts volume
+      // music volume should be 0.25 less than the tts volume
       // so that the music is not too loud
       // Ternary to ensure that the music volume is never negative
-      music.volume = volume - 0.2 > 0 ? volume - 0.2 : 0;
+      music.volume = volume - 0.25 > 0 ? volume - 0.25 : 0;
     }
   }, [music, tts, volume]);
 
