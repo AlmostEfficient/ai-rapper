@@ -325,6 +325,28 @@ textarea {
     transform: scale(1.1);
 }
 
+.song div {
+    display: flex;
+    align-items: center;
+    margin: 5px 0;
+}
+
+.song p {
+    margin-right: 10px;
+}
+
+/* 
+.playButton {
+    border: none;
+    background-color: transparent;
+    color: white;
+} */
+
+.playButton:hover {
+    color: rgb(255, 79, 18);
+    cursor: pointer;
+}
+
 .output {
     place-content: center flex-start;
     align-items: center;

@@ -3,6 +3,7 @@ import Head from 'next/head';
 import Image from 'next/image';
 import buildspaceLogo from '../assets/buildspace-logo.png';
 import { useState } from 'react';
+import songs from '../utils/songs.json';
 
 const Home = () => {
   const [userInput, setUserInput] = useState('');
@@ -12,10 +13,16 @@ const Home = () => {
   // 0 = not started, 1 = generating lyrics, 2 = generating audio, 3 = playing audio, 4 = finished
   const [status, setStatus] = useState(0);
   const [music, setMusic] = useState(null);
+  const [tts, setTTS] = useState(null);
   const [volume, setVolume] = useState(0.3);
-  let tts = null;
 
   const generateLyrics = async () => {
+    // if empty string, return
+    if (userInput === '' || userInput === ' ') {
+      window.alert('Please enter a topic for Raza to rap about!');
+      return;
+    }
+    
     setStatus(1);
 
     console.log('Calling OpenAI...');
@@ -56,30 +63,22 @@ const Home = () => {
 
         console.log('Clean lyrics', cleanLyrics);
         generateAndPlayTTS(cleanLyrics);
+        setStatus(2);
+      }
+      // if 429
+      else if (response.status === 429) {
+        // Only 1 req per IP per day, sorry
+        window.alert('Only one song per day! Check out the previous songs :D');
+        setStatus(0);
+      }
+      else{
+        console.log('Error from OpenAI', response);
+        window.alert('GPT-3 API is down. Please try again later.');
+        setStatus(0);
       }
     } catch (error) {
       console.log(error);
-    } finally {
-      setStatus(2);
-    }
-  };
-
-  const displayLyrics = (lyrics) => {
-    let lines = lyrics.split('\n');
-    let index = 0;
-    
-    setCurrentLine(lines[index]);
-    index++;
-
-    let interval = setInterval(() => {
-      setCurrentLine(lines[index]);
-      index++;
-      if (index === lines.length) {
-        clearInterval(interval);
-        setLyrics(lyrics);
-        setCurrentLine('');
-      }
-    }, 3000);
+    } 
   };
 
   const generateAndPlayTTS  = async (lyrics) => {
@@ -94,12 +93,14 @@ const Home = () => {
     console.log('Started streaming audio');
     const audioBlob = await response.blob();
     const audioUrl = URL.createObjectURL(audioBlob);
-    tts = new Audio(audioUrl);
-  
+    const tts = new Audio(audioUrl);
+    setTTS(tts);
+
     // Adjust playback speed
     tts.playbackRate = 1.2;
+    tts.volume = 0.5;
     music.volume = 0.3;
-  
+    
     music.play();
     setStatus(3);
   
@@ -123,10 +124,46 @@ const Home = () => {
   };
 
   useEffect(() => {
-    if (music) {
-      music.volume = volume;
+    if (music && tts) {
+      tts.volume = volume;
+      // music volume should be 0.2 less than the tts volume
+      // so that the music is not too loud
+      // Ternary to ensure that the music volume is never negative
+      music.volume = volume - 0.2 > 0 ? volume - 0.2 : 0;
     }
-  }, [music, volume]);
+  }, [music, tts, volume]);
+
+  const playSong = (filename, lyrics) => {
+    setStatus(3);
+    stopPlaying();
+
+    const tts = new Audio(`/${filename}`);
+    setTTS(tts);
+    tts.playbackRate = 1.2;
+    tts.volume = 0.5;
+    music.volume = 0.3;
+    music.play();
+    setLyrics(lyrics)
+
+    setTimeout(() => {
+      tts.play();
+    }, 1000);
+
+    tts.onended = () => {
+      setStatus(4);
+      music.pause();
+    };
+  }
+  
+  const replay = () => {
+    setStatus(3);
+
+    music.currentTime = 0;
+    tts.currentTime = 0;
+    
+    tts.play();
+    music.play();
+  };
 
   const onUserChangedText = (event) => {
     setUserInput(event.target.value);
@@ -177,7 +214,6 @@ const Home = () => {
 
           <div className="volume-container">
             <div className="volume-icon">
-              {/* Generate image component with link to image of speaker icon in white stroke from icon website*/}
               <img
                 src="https://img.icons8.com/ios/50/ffffff/speaker.png"
                 alt="speaker"
@@ -191,7 +227,7 @@ const Home = () => {
               max={1}
               step={0.01}
               value={volume}
-              onChange={(e) => setVolume(e.target.value)}
+              onChange={(e) => setVolume(parseFloat(e.target.value))}
             />
           </div>
 
@@ -210,8 +246,15 @@ const Home = () => {
                 )}
               </div>
             </a>
-
-            {/* Button that is visible if text-to-speech is playing that calls stop function */}
+            
+            {status == 4 && (
+              <a className="generate-button" onClick={replay}>
+                <div className="generate">
+                  <p>Replay</p>
+                </div>
+              </a>
+            )}
+            
             {status == 3 && (
               <a className="generate-button" onClick={stopPlaying}>
                 <div className="generate">
@@ -232,6 +275,15 @@ const Home = () => {
               <p> {lyrics} </p>
             </div>
           </div>
+        </div>
+
+        <div className="song-list">
+          <h3>Previous Songs</h3>
+            {songs.map((song) => (
+              <div key={song.song}>
+                <p className="playButton" onClick={() => playSong(song.filename, song.lyrics)}>{song.song}</p>
+              </div>
+            ))}
         </div>
       </div>
 
