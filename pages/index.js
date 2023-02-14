@@ -118,8 +118,8 @@ const Home = () => {
 
   const stopPlaying = () => {
     window.speechSynthesis.cancel();
-    music.pause();
-    tts.pause();
+    if (tts) tts.pause();
+    if (music) music.pause();
     setStatus(4);
   };
 
