@@ -6,10 +6,6 @@ export default function Document() {
       <Head>
         <meta property="og:title" content="AI Rapper" key="title"/>
         <meta property="og:description" content="Can't rap? Get AI to do it for you!" key="description"/>
-        <meta
-          property="og:image"
-          content="https://cdn.buildspace.so/images/vibes/daboiz.png"
-        />
         <meta name="twitter:card" content="summary_large_image"></meta>
       </Head>
       <body>
