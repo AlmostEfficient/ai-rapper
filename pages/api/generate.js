@@ -23,10 +23,10 @@ const generateAction = async (req, res) => {
   const cacheKey = `ip_${ipAddress}`;
 
   const cacheValue = cache.get(cacheKey);
-  if (cacheValue && cacheValue.count >= MAX_GENERATIONS_PER_IP) {
-    res.status(429).send('Too many requests');
-    return;
-  }
+  // if (cacheValue && cacheValue.count >= MAX_GENERATIONS_PER_IP) {
+  //   res.status(429).send('Too many requests');
+  //   return;
+  // }
 
   console.log(`API: ${basePrompt}${req.body.userInput}`);
 
