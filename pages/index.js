@@ -13,6 +13,7 @@ const Home = () => {
   const [status, setStatus] = useState(0);
   const [music, setMusic] = useState(null);
   const [volume, setVolume] = useState(0.3);
+  let tts = null;
 
   const generateLyrics = async () => {
     setStatus(1);
@@ -93,7 +94,7 @@ const Home = () => {
     console.log('Started streaming audio');
     const audioBlob = await response.blob();
     const audioUrl = URL.createObjectURL(audioBlob);
-    const tts = new Audio(audioUrl);
+    tts = new Audio(audioUrl);
   
     // Adjust playback speed
     tts.playbackRate = 1.2;
@@ -105,9 +106,8 @@ const Home = () => {
     // Wait 1s so the music ramps up before the lyrics start
     setTimeout(() => {
       tts.play();
+      setLyrics(lyrics)
     }, 1000);
-  
-    displayLyrics(lyrics)
   
     tts.onended = () => {
       setStatus(4);
@@ -118,6 +118,7 @@ const Home = () => {
   const stopPlaying = () => {
     window.speechSynthesis.cancel();
     music.pause();
+    tts.pause();
     setStatus(4);
   };
 
