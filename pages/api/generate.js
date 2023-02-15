@@ -6,7 +6,7 @@ const configuration = new Configuration({
 });
 
 const cache = new NodeCache({ stdTTL: 86400 });
-const MAX_GENERATIONS_PER_IP = 1;
+const MAX_GENERATIONS_PER_IP = 3;
 
 const openai = new OpenAIApi(configuration);
 const basePrompt =
